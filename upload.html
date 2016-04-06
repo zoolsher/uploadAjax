@@ -4,74 +4,99 @@
     <meta charset="UTF-8">
     <title>uploadTest</title>
     <script>
-        var CONFIG={
-          'vertifySize' : 64*1024
+        var CONFIG = {
+            'vertifySize': 64 * 1024,
+            'sliceSize': 1024 * 1024,
+            'start':0,
+            'file':null
         };
     </script>
 </head>
 <body>
 <input type="file" id="file">
+<button id="click">upload</button>
 <script src="md5.min.js"></script>
 <script>
 
-    function genderFileID(){
-        if(!(this instanceof FileReader)){
+    function genderFileID() {
+        if (!(this instanceof FileReader)) {
             throw new Exception('calling this function the wrong way');
         }
-        var headerMD5 = md5(this.result.slice(0,CONFIG.vertifySize));
-        var tailMD5 = md5(this.result.slice(this.result.length-CONFIG.vertifySize,this.result.length));
-        return md5(headerMD5+""+tailMD5);
+        var headerMD5 = md5(this.result.slice(0, CONFIG.vertifySize));
+        var tailMD5 = md5(this.result.slice(this.result.length - CONFIG.vertifySize, this.result.length));
+        return md5(headerMD5 + "" + tailMD5);
     }
 
 
     document.querySelector('input[type="file"]').addEventListener('change', function (e) {
         var file = this.files[0];
-        var ext = file.name.slice(file.name.lastIndexOf('.')+1,file.name.length);
+        var ext = file.name.slice(file.name.lastIndexOf('.') + 1, file.name.length);
         var fileReader = new FileReader();
         fileReader.ext = ext;
-        fileReader.checkFileWithMD5 = function(callback){
+        fileReader.checkFileWithMD5 = function (callback) {
             var data = new FormData();
-            data.append('MD5',this.MD5);
-            data.append('ext',this.ext);
-            data.append('size',this.result.length);
+            data.append('MD5', this.MD5);
+            data.append('ext', this.ext);
+            data.append('size', this.result.length);
             var ajax = new XMLHttpRequest();
-            ajax.open('POST','/uploadAjax/uploadCreateNew.php');
-            ajax.onreadystatechange = function(){
-                if(this.readyState ==4&& this.status == 200){
+            ajax.open('POST', '/uploadAjax/uploadCreateNew.php');
+            ajax.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
                     callback(this.responseText);
                 }
-            }
+            };
             ajax.send(data);
-        }
-        fileReader.onload = function(){
+        };
+        fileReader.onload = function () {
             this.MD5 = genderFileID.apply(this);
-            this.checkFileWithMD5(function($){
-                console.log($);
+            CONFIG.size = this.result.length;
+            this.checkFileWithMD5(function ($) {
+                var obj = JSON.parse($);
+                CONFIG.start = obj.size|0;
+                CONFIG.filename = obj.filename;
             });
-        }
+        };
         var res = fileReader.readAsBinaryString(file);
+        CONFIG.file = this.files[0];
+    }, false);
 
+    document.querySelector('#click').addEventListener('click', function () {
 
-        function upload(blobOrFile) {
+        function upload(callback) {
+            if(CONFIG.start>=CONFIG.size){
+                return;
+            }
             var data = new FormData();
-            data.append("file", blobOrFile);
-            data.append("start", 0);
-            // XMLHttpRequest 2.0 请求
+            data.append("file", CONFIG.file.slice(CONFIG.start,CONFIG.start+CONFIG.sliceSize));
+            data.append("start", CONFIG.start);
+            data.append("end", CONFIG.start+CONFIG.sliceSize);
+            data.append("filename",CONFIG.filename);
+
             var xhr = new XMLHttpRequest();
-            xhr.open("post", '/upload.php', true);
+            xhr.open("post", '/uploadAjax/upload.php', true);
             xhr.setRequestHeader("X_Requested_With", location.href);
+            xhr.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
+                    callback(this.responseText);
+                }
+            };
             xhr.send(data);
         }
 
-        var blob = this.files[0];
+        var blob = CONFIG.file;
 
-        const BYTES_PER_CHUNK = 1024 * 1024; // 1MB chunk sizes.
         const SIZE = blob.size;
-
         var start = 0;
-        var end = BYTES_PER_CHUNK;
-        upload(blob.slice(start, end));
-    }, false);
+        var end = CONFIG.sliceSize;
+
+        upload(goahead);
+
+        function goahead($){
+            var o = JSON.parse($)
+            CONFIG.start = o.size;
+            upload(goahead);
+        }
+    })
 </script>
 </body>
 </html>

@@ -1,3 +1,4 @@
 <?PHP
-var_dump($_POST);
-var_dump($_FILES);
+include 'UUID.php';
+$id = UUID::v4();
+$start = $_POST['start'];

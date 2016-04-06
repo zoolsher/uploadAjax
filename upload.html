@@ -1,33 +1,58 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<meta charset="UTF-8">
-	<title>uploadTest</title>
+    <meta charset="UTF-8">
+    <title>uploadTest</title>
+    <script>
+        var CONFIG={
+          'vertifySize' : 64*1024
+        };
+    </script>
 </head>
 <body>
-	<input type="file" id="file">
-	<script>
+<input type="file" id="file">
+<script src="md5.min.js"></script>
+<script>
 
-		document.querySelector('input[type="file"]').addEventListener('change', function(e) {
-			function upload(blobOrFile) {
-			  	var data = new FormData();
-				data.append("file", blobOrFile);
-				data.append("start",0);
-				// XMLHttpRequest 2.0 请求
-				var xhr = new XMLHttpRequest();
-				xhr.open("post", '/upload.php', true);
-				xhr.setRequestHeader("X_Requested_With", location.href);
-			  	xhr.send(data);
-			}
-		  	var blob = this.files[0];
+    function genderFileID(){
+        if(typeof this !== 'FileReader'){
+            throw new Exception('calling this function the wrong way');
+        }
+        var headerMD5 = md5(this.result.slice(0,CONFIG.vertifySize));
+        var tailMD5 = md5(this.result.slice(this.result.length-CONFIG.vertifySize,this.result.length));
+        return md5(headerMD5+""+tailMD5);
+    }
 
-		 	const BYTES_PER_CHUNK = 1024 * 1024; // 1MB chunk sizes.
-		  	const SIZE = blob.size;
+    document.querySelector('input[type="file"]').addEventListener('change', function (e) {
+        var file = this.files[0];
+        var fileReader = new FileReader();
+        fileReader.onload = function(){
+            var res = genderFileID.apply(this);
+            console.log()
+        }
+        var res = fileReader.readAsBinaryString(file);
 
-		  	var start = 0;
-		  	var end = BYTES_PER_CHUNK;
-		  	upload(blob.slice(start,end));
-		}, false);
-	</script>
+
+        function upload(blobOrFile) {
+            var data = new FormData();
+            data.append("file", blobOrFile);
+            data.append("start", 0);
+            // XMLHttpRequest 2.0 请求
+            var xhr = new XMLHttpRequest();
+            xhr.open("post", '/upload.php', true);
+            xhr.setRequestHeader("X_Requested_With", location.href);
+            xhr.send(data);
+        }
+
+        var blob = this.files[0];
+
+        const BYTES_PER_CHUNK = 1024 * 1024; // 1MB chunk sizes.
+        const SIZE = blob.size;
+
+        var start = 0;
+        var end = BYTES_PER_CHUNK;
+        upload(blob.slice(start, end));
+    }, false);
+</script>
 </body>
 </html>

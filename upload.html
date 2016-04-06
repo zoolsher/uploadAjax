@@ -15,7 +15,7 @@
 <script>
 
     function genderFileID(){
-        if(typeof this !== 'FileReader'){
+        if(!(this instanceof FileReader)){
             throw new Exception('calling this function the wrong way');
         }
         var headerMD5 = md5(this.result.slice(0,CONFIG.vertifySize));
@@ -23,12 +23,31 @@
         return md5(headerMD5+""+tailMD5);
     }
 
+
     document.querySelector('input[type="file"]').addEventListener('change', function (e) {
         var file = this.files[0];
+        var ext = file.name.slice(file.name.lastIndexOf('.')+1,file.name.length);
         var fileReader = new FileReader();
+        fileReader.ext = ext;
+        fileReader.checkFileWithMD5 = function(callback){
+            var data = new FormData();
+            data.append('MD5',this.MD5);
+            data.append('ext',this.ext);
+            data.append('size',this.result.length);
+            var ajax = new XMLHttpRequest();
+            ajax.open('POST','/uploadAjax/uploadCreateNew.php');
+            ajax.onreadystatechange = function(){
+                if(this.readyState ==4&& this.status == 200){
+                    callback(this.responseText);
+                }
+            }
+            ajax.send(data);
+        }
         fileReader.onload = function(){
-            var res = genderFileID.apply(this);
-            console.log()
+            this.MD5 = genderFileID.apply(this);
+            this.checkFileWithMD5(function($){
+                console.log($);
+            });
         }
         var res = fileReader.readAsBinaryString(file);
 

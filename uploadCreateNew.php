@@ -1,12 +1,24 @@
 <?PHP
-$hashcode = $_POST['hashcode'];
+$res = new stdClass();
+$path = dir(getcwd());
+$isExist = false;
 
-function isExist($hashcode) {
-	$path = dir(getcwd());
-	while ($f = read($path)) {
-		var_dump($f);
-	}
+$filename = $_POST['MD5'].'.'.$_POST['ext'];
+while($data = $path->read()){
+    if($data == $filename){
+        $isExist = true;
+        break;
+    }
 }
-
-$id = UUID::v4();
-isExist(0);
+$res->isExist = $isExist;
+if($isExist){
+    $res->size = filesize($filename);
+}else{
+    $fd = fopen($filename,'x');
+    if(!$fd){
+        $res->createState = false;
+    }else{
+        $res->createState = true;
+    }
+}
+echo json_encode($res);

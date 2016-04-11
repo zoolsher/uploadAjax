@@ -1,0 +1,22 @@
+{
+  "name": "fileworker",
+  "version": "1.0.0",
+  "description": "[support resume broken downloads]a node server simple for uploading files ",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "jshint index.js;true"
+  },
+  "keywords": [
+    "resume",
+    "broken",
+    "downloads"
+  ],
+  "author": "zoolsher",
+  "license": "MIT",
+  "dependencies": {
+    "fs-promise": "^0.5.0",
+    "node-promise": "^0.5.12",
+    "npm-version": "^1.1.0"
+  }
+}
